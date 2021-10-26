@@ -1,3 +1,5 @@
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+
 function generateRange(tabId) {
     let tabVolume = document.createElement('input');
     tabVolume.setAttribute('type', 'range');
@@ -26,6 +28,16 @@ function getFullRow(index, tabName, tabId) {
     return trE;
 }
 
+function changeVolume(tabElement, tabId) {
+    let target = document.querySelector('[audioSource="${tabId}"]');
+    let audioCtx = new AudioContext();
+    let media = audioCtx.createMediaElementSource(target);
+    let gainNode = audioCtx.createGain();
+
+    gainNode.gain.value = document.querySelector(tabId);
+
+}
+
 function listTabs() {
 
     getCurrentWindowTabs().then((tabs) => {
@@ -34,20 +46,29 @@ function listTabs() {
         let limit = 20;
         let counter = 0;
 
+        console.log(tabs);
         for (let tab of tabs) {
             if (!tab.active && counter <= limit) {
-                let tabVolume = generateRange();
+                //let gain = tab.AudioContext.createGain();
                 console.log(tab.title + tab.id);
-                currentTabs.appendChild(getFullRow(counter + 1, tab.title, tab.id));
+                let tabElement = getFullRow(counter + 1, tab.title, tab.id);
+                for (const audioSource of document.querySelectorAll('audio', 'video')) {
+                    if (!audioSource.hasAttribute('audioSource')) audioSource.setAttribute('audioSource', tab.id);
+                }
+                track.connect(gainNode).connect(panner).connect(audioCtx.destination);
+                tabElement.addEventListener('change', changeVolume(tabElement, tab.id));
+                currentTabs.appendChild(tabElement);
+
             }
             counter += 1;
         }
         tabsList.appendChild(currentTabs);
+
     });
 }
 
 document.addEventListener("DOMContentLoaded", listTabs);
 
 function getCurrentWindowTabs() {
-    return browser.tabs.query({ currentWindow: true });
+    return browser.tabs.query({ currentWindow: true, audible: true });
 }
